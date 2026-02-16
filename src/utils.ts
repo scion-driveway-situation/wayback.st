@@ -25,14 +25,17 @@ export function formatDate(timestamp: number): string {
 
 export function getDomain(url: string): string | null {
   try {
-    return new URL(url).hostname
+    const hostname = new URL(url).hostname
+    if (hostname && hostname.includes(".")) return hostname
   } catch {
     try {
-      return new URL("https://" + url).hostname
+      const hostname = new URL("https://" + url).hostname
+      if (hostname && hostname.includes(".")) return hostname
     } catch {
-      return null
+      /* */
     }
   }
+  return null
 }
 
 export function getTagValue(event: NostrEvent, tag: string): string | null {

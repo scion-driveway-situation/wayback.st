@@ -23,6 +23,7 @@ export function Home() {
   let [rightEvents, setRightEvents] = createSignal<NostrEvent[]>([])
   let [showContacts, setShowContacts] = createSignal(false)
   let [showRelays, setShowRelays] = createSignal(false)
+  let replayContainer: HTMLDivElement | undefined
 
   const pubkeyForContacts = () => {
     let logged = loggedIn()
@@ -179,7 +180,7 @@ export function Home() {
   })
 
   return (
-    <div>
+    <div class="flex flex-col flex-1">
       <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
         <div class="order-last md:order-first">
           <Show when={contacts() && global()}>
@@ -267,11 +268,19 @@ export function Home() {
         </div>
       </div>
       <Show when={selectedEvent()}>
-        <div class="border border-black h-96 mt-2 min-h-[400px]">
+        <div class="flex justify-end mt-2 mb-2">
+          <button
+            on:click={() => replayContainer?.requestFullscreen()}
+            class="font-mono border border-black bg-gray-200 hover:bg-gray-300 px-1 py-0.5 cursor-pointer text-sm"
+          >
+            [FULLSCREEN]
+          </button>
+        </div>
+        <div ref={replayContainer} class="border border-black flex-1 min-h-[400px] relative">
           <replay-web-page
             attr:source={getTagValue(selectedEvent(), "url")}
             attr:url={getTagValue(selectedEvent(), "page")}
-            class="w-full h-full"
+            class="absolute inset-0 w-full h-full"
           />
         </div>
       </Show>

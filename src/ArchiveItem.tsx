@@ -9,8 +9,16 @@ export function ArchiveItem(props: {
 }) {
   const rTags = () => props.event.tags.filter(t => t[0] === "r").map(t => t[1])
   const firstR = () => rTags()[0]
-  const domain = () => (firstR() ? getDomain(firstR()) : "")
   const pageTags = () => getPageTags(props.event)
+  const domain = () => {
+    if (firstR()) {
+      const d = getDomain(firstR())
+      if (d) return d
+    }
+    const pages = pageTags()
+    if (pages.length > 0 && pages[0]) return getDomain(pages[0])
+    return null
+  }
   const hasMore = () => (pageTags().length > 4 ? pageTags().length - 4 : false)
   const paths = () => pageTags().slice(0, hasMore() ? 3 : 4)
 
@@ -19,9 +27,9 @@ export function ArchiveItem(props: {
       class={`border border-gray-300 rounded p-2 mb-2 cursor-pointer hover:bg-sky-50 transition-all duration-200 ${props.deprioritized ? "opacity-50" : ""}`}
       onClick={() => props.onClick?.()}
     >
-      <div class="flex justify-end items-center mb-1">
+      <div class="flex justify-end items-center mb-1 gap-2">
         <nostr-name attr:pubkey={props.event.pubkey} class="font-medium" />
-        <nostr-picture attr:pubkey={props.event.pubkey} class="w-6 h-6 rounded-full mr-2" />
+        <nostr-picture attr:pubkey={props.event.pubkey} class="w-6 h-6 min-w-6 rounded-full overflow-hidden" />
       </div>
       {domain() && <h3 class="text-lg font-bold mb-1 text-blue-600">{domain()}</h3>}
       {props.event.content && (

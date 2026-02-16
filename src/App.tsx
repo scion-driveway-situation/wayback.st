@@ -30,10 +30,10 @@ function App() {
   })
 
   return (
-    <div class="max-w-7xl mx-auto">
+    <div class="max-w-7xl mx-auto min-h-screen flex flex-col">
       <header class="border-b border-black mb-5 pb-2 flex justify-between items-center">
         <div>
-          <strong>WEBSITESTR</strong>
+          <strong>Wayback.st(r)</strong>
         </div>
         <div>
           <Switch>
@@ -59,7 +59,7 @@ function App() {
         </div>
       </header>
 
-      <main>
+      <main class="flex-1 flex flex-col">
         <Router>
           <Route path="/" component={Home} />
           <Route path="/:nevent" component={Home} />
@@ -69,7 +69,7 @@ function App() {
       <footer class="border-t border-black mt-5 pt-2 text-center text-xs">
         <p>
           <a
-            href="https://gitworkshop.dev/npub180cvv07tjdrrgpa0j7j7tmnyl2yr6yr7l8j4s3evf6u64th6gkwsyjh6w6/websitestr"
+            href="https://gitworkshop.dev/npub165650f6wly0a72c67hgm0ljkmt4cx00jc7cguem8m44vupxjy96s6vj8up/relay.ngit.dev/waybackst"
             class="text-blue-600 visited:text-purple-600 underline"
           >
             SOURCE CODE
