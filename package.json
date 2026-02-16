@@ -1,0 +1,27 @@
+{
+  "private": true,
+  "type": "module",
+  "devDependencies": {
+    "eslint": "^9.27.0",
+    "eslint-config-prettier": "^10.1.5",
+    "eslint-plugin-prettier": "^5.4.0",
+    "eslint-plugin-solid": "^0.14.5",
+    "prettier": "^3.5.3",
+    "tailwindcss": "^4.1.7",
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.32.1",
+    "vite": "^6.0.0",
+    "vite-plugin-solid": "^2.11.6"
+  },
+  "dependencies": {
+    "@nostr/gadgets": "npm:@jsr/nostr__gadgets@0.0.39",
+    "@nostr/tools": "npm:@jsr/nostr__tools@2.17.0",
+    "@solid-primitives/intersection-observer": "^2.2.1",
+    "@solidjs/router": "^0.15.3",
+    "@tailwindcss/vite": "^4.1.7",
+    "@thisbeyond/solid-select": "^0.15.0",
+    "debounce": "^2.2.0",
+    "nostr-web-components": "^0.0.15",
+    "solid-js": "^1.9.5"
+  }
+}
