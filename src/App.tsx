@@ -33,7 +33,7 @@ function App() {
     <div class="max-w-7xl mx-auto min-h-screen flex flex-col">
       <header class="border-b border-black mb-5 pb-2 flex justify-between items-center">
         <div>
-          <strong>Wayback.st(r)</strong>
+          <strong>Wayback Street)</strong>
         </div>
         <div>
           <Switch>
