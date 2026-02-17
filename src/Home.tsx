@@ -23,7 +23,16 @@ export function Home() {
   let [rightEvents, setRightEvents] = createSignal<NostrEvent[]>([])
   let [showContacts, setShowContacts] = createSignal(false)
   let [showRelays, setShowRelays] = createSignal(false)
+  let [onlyWaybackSt, setOnlyWaybackSt] = createSignal(true)
+  let [leftLoading, setLeftLoading] = createSignal(true)
   let replayContainer: HTMLDivElement | undefined
+
+  // Helper to check if an event was seen on wayback.st relay
+  const isFromWaybackSt = (eventId: string): boolean => {
+    const relays = pool.seenOn.get(eventId)
+    if (!relays) return false
+    return Array.from(relays).some(r => r.url.includes("wayback.st"))
+  }
 
   const pubkeyForContacts = () => {
     let logged = loggedIn()
@@ -76,7 +85,12 @@ export function Home() {
 
   // Public relays (hardcoded + dynamic discovery)
   const [publicRelays] = createResource(global, async dynamicRelays => {
-    const hardcoded = ["wss://relay.damus.io", "wss://nos.lol", "wss://relay.primal.net"]
+    const hardcoded = [
+      "wss://relay.wayback.st",
+      "wss://relay.damus.io",
+      "wss://nos.lol",
+      "wss://relay.primal.net"
+    ]
     const dynamic = dynamicRelays || []
     // Combine and deduplicate
     return [...new Set([...hardcoded, ...dynamic])]
@@ -88,6 +102,8 @@ export function Home() {
     if (!publicRelays()) return
 
     leftSubc?.close?.()
+    setLeftLoading(true)
+    setLeftEvents([])
 
     let eosed = false
     let pre: NostrEvent[] = []
@@ -116,6 +132,7 @@ export function Home() {
           return b.created_at - a.created_at
         })
         setLeftEvents(sorted)
+        setLeftLoading(false)
         pre = []
         eosed = true
       }
@@ -194,7 +211,10 @@ export function Home() {
     <div class="flex flex-col flex-1">
       <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
         <div class="order-last md:order-first">
-          <Show when={contacts() && global()}>
+          <Show when={contacts.loading || global.loading}>
+            <p class="text-gray-500 italic">Loading contacts and global relays...</p>
+          </Show>
+          <Show when={contacts() && global() && !contacts.loading && !global.loading}>
             <p>
               looking at{" "}
               <span
@@ -244,11 +264,35 @@ export function Home() {
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div class="flex flex-col">
-          <h3 class="mb-2 font-bold">Public relay archives:</h3>
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-bold">Public relay archives:</h3>
+            <label class="flex items-center gap-2 text-sm cursor-pointer">
+              <input
+                type="checkbox"
+                checked={onlyWaybackSt()}
+                onChange={e => setOnlyWaybackSt(e.target.checked)}
+                class="cursor-pointer"
+              />
+              <span>Only wayback.st</span>
+            </label>
+          </div>
           <div
             class={`border border-black p-2 overflow-y-auto flex-1 ${selectedEvent() ? "h-40 overflow-y-auto" : "min-h-120"}`}
           >
-            <For each={leftEvents()}>
+            <Show when={leftLoading()}>
+              <p class="text-gray-500 italic text-center py-4">
+                Loading archives from public relays...
+              </p>
+            </Show>
+            <Show
+              when={
+                !leftLoading() &&
+                leftEvents().filter(e => !onlyWaybackSt() || isFromWaybackSt(e.id)).length === 0
+              }
+            >
+              <p class="text-gray-500 italic text-center py-4">No archives found</p>
+            </Show>
+            <For each={leftEvents().filter(e => !onlyWaybackSt() || isFromWaybackSt(e.id))}>
               {(event: NostrEvent) => (
                 <ArchiveItem
                   event={event}
