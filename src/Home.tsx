@@ -25,6 +25,7 @@ export function Home() {
   let [showRelays, setShowRelays] = createSignal(false)
   let [onlyWaybackSt, setOnlyWaybackSt] = createSignal(true)
   let [leftLoading, setLeftLoading] = createSignal(true)
+  let [columnsExpanded, setColumnsExpanded] = createSignal(false)
   let replayContainer: HTMLDivElement | undefined
 
   // Helper to check if an event was seen on wayback.st relay
@@ -277,7 +278,7 @@ export function Home() {
             </label>
           </div>
           <div
-            class={`border border-black p-2 overflow-y-auto flex-1 ${selectedEvent() ? "h-40 overflow-y-auto" : "min-h-120"}`}
+            class={`border border-black p-2 overflow-y-auto ${columnsExpanded() ? "flex-1 min-h-120" : "h-64"}`}
           >
             <Show when={leftLoading()}>
               <p class="text-gray-500 italic text-center py-4">
@@ -306,7 +307,7 @@ export function Home() {
         <div class="flex flex-col">
           <h3 class="mb-2 font-bold">Contact-specific relays:</h3>
           <div
-            class={`border border-black p-2 overflow-y-auto flex-1 ${selectedEvent() ? "h-40 overflow-y-auto" : "min-h-120"}`}
+            class={`border border-black p-2 overflow-y-auto ${columnsExpanded() ? "flex-1 min-h-120" : "h-64"}`}
           >
             <For each={rightEvents()}>
               {(event: NostrEvent) => (
@@ -321,6 +322,14 @@ export function Home() {
             </For>
           </div>
         </div>
+      </div>
+      <div class="flex justify-center mb-4">
+        <button
+          onClick={() => setColumnsExpanded(!columnsExpanded())}
+          class="text-sm text-blue-500 hover:text-blue-700 underline cursor-pointer"
+        >
+          {columnsExpanded() ? "[collapse]" : "[expand]"}
+        </button>
       </div>
       <Show when={selectedEvent()}>
         <div class="flex justify-end mt-2 mb-2">
@@ -344,6 +353,7 @@ export function Home() {
 
   function handleEventClick(event: NostrEvent) {
     setSelectedEvent(event)
+    setColumnsExpanded(false) // Collapse columns so replay window is visible
     history.pushState(
       "",
       null,
