@@ -52,12 +52,9 @@ export function Home() {
       if (!contacts) return
 
       const domain = getDomain(url)
-      if (!domain) return
+      const filter = domain ? { kinds: [4554], "#r": [domain] } : { kinds: [4554], limit: 50 }
 
-      return outboxFilterRelayBatch(contacts, {
-        kinds: [4554],
-        "#r": [domain]
-      })
+      return outboxFilterRelayBatch(contacts, filter)
     }
   )
 
@@ -77,17 +74,28 @@ export function Home() {
     return urls.slice(0, 15)
   })
 
-  // left column: events from contacts
+  // Public relays (hardcoded + dynamic discovery)
+  const [publicRelays] = createResource(global, async dynamicRelays => {
+    const hardcoded = ["wss://relay.damus.io", "wss://nos.lol", "wss://relay.primal.net"]
+    const dynamic = dynamicRelays || []
+    // Combine and deduplicate
+    return [...new Set([...hardcoded, ...dynamic])]
+  })
+
+  // left column: events from public relays
   let leftSubc: SubCloser
   createEffect(() => {
-    leftSubc?.close?.()
+    if (!publicRelays()) return
 
-    if (!outboxRequest()) return
+    leftSubc?.close?.()
 
     let eosed = false
     let pre: NostrEvent[] = []
 
-    leftSubc = pool.subscribeMap(outboxRequest(), {
+    const domain = getDomain(url())
+    const filter = domain ? { kinds: [4554], "#r": [domain] } : { kinds: [4554], limit: 50 }
+
+    leftSubc = pool.subscribeMany(publicRelays(), filter, {
       onevent: event => {
         if (!getTagValue(event, "url") || !getTagValue(event, "page")) return
 
@@ -98,46 +106,49 @@ export function Home() {
         }
       },
       oneose: () => {
-        setLeftEvents(pre)
+        // Sort: contacts first, then others
+        const contactSet = new Set(contacts() || [])
+        const sorted = pre.sort((a, b) => {
+          const aIsContact = contactSet.has(a.pubkey)
+          const bIsContact = contactSet.has(b.pubkey)
+          if (aIsContact && !bIsContact) return -1
+          if (!aIsContact && bIsContact) return 1
+          return b.created_at - a.created_at
+        })
+        setLeftEvents(sorted)
         pre = []
+        eosed = true
       }
     })
   })
 
-  // right column: events from global%wot
+  // right column: events from outbox (contact-specific relays)
   let rightSubc: SubCloser
   createEffect(() => {
-    const domain = getDomain(url())
-    if (!domain) return
-    if (!global()) return
-
     rightSubc?.close?.()
+
+    const outbox = outboxRequest()
+    if (!outbox) return
 
     let eosed = false
     let pre: NostrEvent[] = []
 
-    rightSubc = pool.subscribeMany(
-      global(),
-      {
-        kinds: [4554],
-        "#r": [domain]
-      },
-      {
-        onevent: event => {
-          if (!getTagValue(event, "url") || !getTagValue(event, "page")) return
+    rightSubc = pool.subscribeMap(outbox, {
+      onevent: event => {
+        if (!getTagValue(event, "url") || !getTagValue(event, "page")) return
 
-          if (!eosed) {
-            pre.push(event)
-          } else {
-            setRightEvents(curr => [event, ...curr])
-          }
-        },
-        oneose: () => {
-          setRightEvents(pre)
-          pre = []
+        if (!eosed) {
+          pre.push(event)
+        } else {
+          setRightEvents(curr => [event, ...curr])
         }
+      },
+      oneose: () => {
+        setRightEvents(pre)
+        pre = []
+        eosed = true
       }
-    )
+    })
   })
 
   onMount(async () => {
@@ -233,7 +244,7 @@ export function Home() {
       </div>
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div class="flex flex-col">
-          <h3 class="mb-2 font-bold">Archives by contacts:</h3>
+          <h3 class="mb-2 font-bold">Public relay archives:</h3>
           <div
             class={`border border-black p-2 overflow-y-auto flex-1 ${selectedEvent() ? "h-40 overflow-y-auto" : "min-h-120"}`}
           >
@@ -242,14 +253,14 @@ export function Home() {
                 <ArchiveItem
                   event={event}
                   onClick={() => handleEventClick(event)}
-                  deprioritized={false}
+                  deprioritized={!contacts()?.includes(event.pubkey)}
                 />
               )}
             </For>
           </div>
         </div>
         <div class="flex flex-col">
-          <h3 class="mb-2 font-bold">Other:</h3>
+          <h3 class="mb-2 font-bold">Contact-specific relays:</h3>
           <div
             class={`border border-black p-2 overflow-y-auto flex-1 ${selectedEvent() ? "h-40 overflow-y-auto" : "min-h-120"}`}
           >
@@ -259,7 +270,7 @@ export function Home() {
                   <ArchiveItem
                     event={event}
                     onClick={() => handleEventClick(event)}
-                    deprioritized={!wot()?.has(event.pubkey)}
+                    deprioritized={false}
                   />
                 </Show>
               )}
